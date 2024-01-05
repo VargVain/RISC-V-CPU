@@ -36,7 +36,7 @@ always @(posedge clk_in)
       end
     else if (!rdy_in)
       begin
-      
+        
       end
     else
       begin
