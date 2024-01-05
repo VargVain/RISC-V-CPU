@@ -10,7 +10,7 @@ module predictor(
     // for ROB
 );
 
-assign jump = 1'b1;
+assign jump = 1'b0;
 
 always @(posedge clk) begin
     if (rst) begin

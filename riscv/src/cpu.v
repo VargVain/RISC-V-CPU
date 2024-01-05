@@ -4,16 +4,16 @@
 module cpu(
   input  wire                 clk_in,			// system clock signal
   input  wire                 rst_in,			// reset signal
-	input  wire					        rdy_in,			// ready signal, pause cpu when low
+  input  wire				  rdy_in,			// ready signal, pause cpu when low
 
-  input  wire [ 7:0]          mem_din,		// data input bus
-  output wire [ 7:0]          mem_dout,		// data output bus
+  input  wire [ 7:0]          mem_din,		    // data input bus
+  output wire [ 7:0]          mem_dout,		    // data output bus
   output wire [31:0]          mem_a,			// address bus (only 17:0 is used)
   output wire                 mem_wr,			// write/read signal (1 for write)
 	
-	input  wire                 io_buffer_full, // 1 if uart buffer is full
+  input  wire                 io_buffer_full,   // 1 if uart buffer is full
 	
-	output wire [31:0]			dbgreg_dout		// cpu register output (debugging demo)
+  output wire [31:0]		  dbgreg_dout		// cpu register output (debugging demo)
 );
 
 // implementation goes here
@@ -106,10 +106,10 @@ wire [4:0]          rf_regname;
 wire [5:0]          rf_regrename;
 
 // RF & ROB
-wire                rob_valid;
-wire [5:0]          rob_index;
-wire [4:0]          rob_rd;
-wire [31:0]         rob_value;
+wire                rf_rob_valid;
+wire [5:0]          rf_rob_index;
+wire [4:0]          rf_rob_rd;
+wire [31:0]         rf_rob_value;
 
 // ALU & RS
 wire [5:0]          to_alu_opcode;
@@ -260,14 +260,14 @@ reorder_buffer  reorder_buffer_inst (
     .issue_value_valid2(rob_value_valid2),
     .issue_value1(rob_value1),
     .issue_value2(rob_value2),
-    .rf_valid(rob_valid),
-    .rf_index(rob_index),
-    .rf_rd(rob_rd),
-    .rf_value(rob_value),
+    .rf_valid(rf_rob_valid),
+    .rf_index(rf_rob_index),
+    .rf_rd(rf_rob_rd),
+    .rf_value(rf_rob_value),
     .alu_valid(from_alu_valid),
     .alu_res(from_alu_res),
-    .alu_jump(from_alu_jump),
-    .alu_jump_pc(from_alu_jump_pc),
+    .alu_jump(from_alu_real_jump),
+    .alu_jump_pc(from_alu_real_jump_pc),
     .alu_rob_index(from_alu_rob_index_out),
     .rob_full(rob_full),
     .flush(flush),
@@ -302,6 +302,28 @@ reservation_station  reservation_station_inst (
     .flush(flush),
     .rs_full(rs_full)
 );
+
+register_file  register_file_inst (
+    .clk(clk_in),
+    .rst(rst_in),
+    .rdy(rdy_in),
+    .rob_valid(rf_rob_valid),
+    .rob_index(rf_rob_index),
+    .rob_rd(rf_rob_rd),
+    .rob_value(rf_rob_value),
+    .issue_valid(rf_valid),
+    .issue_regname(rf_regname),
+    .issue_regrename(rf_regrename),
+    .check1(rf_check1),
+    .check2(rf_check2),
+    .val1(rf_val1),
+    .dep1(rf_dep1),
+    .has_dep1(rf_has_dep1),
+    .val2(rf_val2),
+    .dep2(rf_dep2),
+    .has_dep2(rf_has_dep2),
+    .flush(flush)
+  );
 
 
 endmodule

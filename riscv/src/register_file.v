@@ -40,9 +40,16 @@ assign dep2 = has_dep2 ? reg_dep[check2] : 0;
 assign val1 = forward1 ? rob_value : register[check1];
 assign val2 = forward2 ? rob_value : register[check2];
 
+integer i;
+
 always @(posedge clk) begin
     if (rst) begin
         // reset
+        for (i = 0; i < 32; i = i + 1) begin
+            register[i] <= 0;
+            reg_dep[i] <= 0;
+            reg_has_dep[i] <= 0;
+        end
     end else if (rdy) begin
         if (flush) begin
             // flush

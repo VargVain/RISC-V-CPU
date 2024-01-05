@@ -61,9 +61,25 @@ wire empty = next == head;
 assign rob_full = full;
 assign next_index = next;
 
+integer i;
+
 always @(posedge clk) begin
     if (rst) begin
         // reset
+        flush <= 0;
+        new_pc_enable <= 0;
+        for (i = 0; i < 64; i = i + 1) begin
+            ready[i] <= 0;
+            rd[i] <= 0;
+            jump[i] <= 0;
+            real_jump[i] <= 0;
+            jump_pc[i] <= 0;
+            opcode[i] <= 0;
+            res[i] <= 0;
+        end
+        rf_valid <= 0;
+        head <= 0;
+        next <= 0;
     end else if (rdy) begin
         if (issue_valid) begin
             rd[next] <= issue_rd;

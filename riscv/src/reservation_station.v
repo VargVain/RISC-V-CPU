@@ -92,6 +92,25 @@ integer i;
 always @(posedge clk) begin
     if (rst) begin
         // reset
+        for (i = 0; i <= 16; i = i + 1) begin
+            busy[i] <= 0;
+            rob_index[i] <= 0;
+            val1[i] <= 0;
+            dep1[i] <= 0;
+            has_dep1[i] <= 0;
+            val2[i] <= 0;
+            dep2[i] <= 0;
+            has_dep2[i] <= 0;
+            imm[i] <= 0;
+            pc[i] <= 0;
+            opcode[i] <= 0;
+        end
+        alu_opcode <= 0;
+        alu_val1 <= 0;
+        alu_val2 <= 0;
+        alu_imm <= 0;
+        alu_pc <= 0;
+        alu_rob_index <= 0;
     end else if (rdy) begin
         if (flush) begin
             // flush

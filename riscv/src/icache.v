@@ -28,9 +28,17 @@ wire hit = valid[pc_index] && (tag[pc_index] == pc[`TAG_RANGE]);
 assign instr_out_valid = hit;
 assign instr_out = data[pc_index];
 
+integer i;
+
 always @(posedge clk) begin
     if (rst) begin
         // reset
+        loading <= 0;
+        for (i = 0; i < 256; i = i + 1) begin
+            valid[i] <= 0;
+        end
+        instr_in_addr <= 0;
+        instr_in_enable <= 0;
     end else if (rdy) begin
         if (instr_in_valid && loading == 1'b1) begin
             data[pc_index] <= instr_in;

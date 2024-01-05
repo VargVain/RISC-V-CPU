@@ -15,8 +15,8 @@ module memory_controller(
     // for icache
     input               instr_out_enable,
     input [31:0]        instr_out_addr,
-    output              instr_out_valid,
-    output [31:0]       instr_out
+    output reg          instr_out_valid,
+    output reg [31:0]   instr_out
 
 );
 
@@ -25,7 +25,12 @@ reg [2:0]           progress;
 
 always @(posedge clk) begin
     if (rst) begin
-        // reset
+        state <= `IDLE;
+        progress <= 0;
+        instr_out_valid <= 0;
+        mem_dout <= 0;
+        mem_a <= 0;
+        mem_wr <= 0;
     end else if (rdy) begin
         case (state)
             `IDLE: begin

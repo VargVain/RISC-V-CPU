@@ -1,4 +1,4 @@
-`include "const.v"
+`include "config.v"
 
 module arithmetic_logic_unit(
     // for RS
@@ -9,7 +9,7 @@ module arithmetic_logic_unit(
     input [31:0]         pc,
     input [5:0]          rob_index,
 
-    // for ROB & RS
+    // for ROB & LSB & RS
     output reg           valid,
     output reg [31:0]    res,
     output reg           real_jump,
@@ -17,10 +17,9 @@ module arithmetic_logic_unit(
     output reg [5:0]     rob_index_out
 );
 
-assign rob_index_out = rob_index;
-assign valid = opcode != 0;
-
 always @(*) begin
+    rob_index_out = rob_index;
+    valid = opcode != 0;
     case (opcode)
         `LUI: begin
             res = imm;

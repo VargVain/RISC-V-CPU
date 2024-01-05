@@ -81,6 +81,9 @@ wire [31:0] val2 = rf_has_dep2 ? (rob_value_valid2 ? rob_value2 : 0) : rf_val2;
 always @(posedge clk) begin
 if (rst) begin
         // reset
+        rs_valid <= 0;
+        rf_valid <= 0;
+        rob_valid <= 0;
     end else if (rdy) begin
         if (flush) begin
             // flush

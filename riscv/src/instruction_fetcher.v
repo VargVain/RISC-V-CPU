@@ -38,6 +38,10 @@ assign instr_predict_addr = pc;
 always @(posedge clk) begin
     if (rst) begin
         // reset
+        stall <= 0;
+        instr_out_valid <= 0;
+        instr_in_addr <= 0;
+        pc <= 0;
     end else if (rdy) begin
         if (flush) begin
             // flush
@@ -47,10 +51,10 @@ always @(posedge clk) begin
                 instr_out_valid <= 1'b1;
                 instr_out <= instr_in;
                 instr_out_pc <= pc;
-
                 case(op1)
                     7'b1101111: begin // JAL
                         pc <= pc + jal_imm;
+                        instr_in_addr <= pc + jal_imm;
                         jumped <= 1'b0;
                     end
                     7'b1100111: begin // JALR
@@ -59,13 +63,15 @@ always @(posedge clk) begin
                     end
                     7'b1100011: begin // Branch
                         pc <= jump ? pc + branch_imm : pc + 4;
+                        instr_in_addr <= jump ? pc + branch_imm : pc + 4;
                         jumped <= jump;
                     end
                     default begin
                         pc <= pc + 4;
+                        instr_in_addr <= pc + 4;
                         jumped <= 1'b0;
                     end
-                endcase       
+                endcase
             end else instr_out_valid <= 1'b0;
 
             if (stall && new_pc_enable) begin // stupid
