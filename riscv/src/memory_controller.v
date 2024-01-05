@@ -1,4 +1,4 @@
-`include "const.v"
+`include "config.v"
 
 module memory_controller(
     input               clk,

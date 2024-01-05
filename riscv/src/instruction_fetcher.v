@@ -47,19 +47,24 @@ always @(posedge clk) begin
                 instr_out_valid <= 1'b1;
                 instr_out <= instr_in;
                 instr_out_pc <= pc;
-                jumped <= jump;
 
                 case(op1)
                     7'b1101111: begin // JAL
                         pc <= pc + jal_imm;
+                        jumped <= 1'b0;
                     end
                     7'b1100111: begin // JALR
                         stall <= 1'b1;
+                        jumped <= 1'b0;
                     end
                     7'b1100011: begin // Branch
                         pc <= jump ? pc + branch_imm : pc + 4;
+                        jumped <= jump;
                     end
-                    default pc <= pc + 4;
+                    default begin
+                        pc <= pc + 4;
+                        jumped <= 1'b0;
+                    end
                 endcase       
             end else instr_out_valid <= 1'b0;
 

@@ -1,4 +1,4 @@
-`include "const.v"
+`include "config.v"
 
 module icache(
     input               clk,

@@ -23,6 +23,7 @@ module instruction_issuer(
     output reg          rob_valid,
     output reg [4:0]    rob_rd,
     output reg          rob_jumped,
+    output reg [5:0]    rob_opcode,
 
     input               rob_value_valid1,
     input               rob_value_valid2,

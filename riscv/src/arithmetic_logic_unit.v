@@ -9,7 +9,7 @@ module arithmetic_logic_unit(
     input [31:0]         pc,
     input [5:0]          rob_index,
 
-    // for ALU & RS
+    // for ROB & RS
     output reg           valid,
     output reg [31:0]    res,
     output reg           real_jump,
@@ -37,26 +37,32 @@ always @(*) begin
             real_jump_pc = (val1 + imm) & 32'hfffffffe;
         end
         `BEQ: begin
+            res = pc + 4;
             real_jump = val1 == val2;
             real_jump_pc = pc + imm;
         end
         `BNE: begin
+            res = pc + 4;
             real_jump = val1 != val2;
             real_jump_pc = pc + imm;
         end
         `BLT: begin
+            res = pc + 4;
             real_jump = $signed(val1) < $signed(val2);
             real_jump_pc = pc + imm;
         end
         `BGE: begin
+            res = pc + 4;
             real_jump = $signed(val1) >= $signed(val2);
             real_jump_pc = pc + imm;
         end
         `BLTU: begin
+            res = pc + 4;
             real_jump = val1 < val2;
             real_jump_pc = pc + imm;
         end
         `BGEU: begin
+            res = pc + 4;
             real_jump = val1 > val2;
             real_jump_pc = pc + imm;
         end

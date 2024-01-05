@@ -57,3 +57,6 @@
 
 // parameters for reservation station
 `define    RS_WIDTH         4
+
+// parameters for reorder buffer
+`define    ROB_WIDTH        6
