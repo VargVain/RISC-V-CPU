@@ -38,14 +38,6 @@
 `define    OR        6'd36
 `define    AND       6'd37
 
-// identifier for each state
-`define    IDLE      5'd0
-`define    BUSY      5'd1
-`define    STALL     5'd2
-`define    FETCH     5'd3
-`define    LOAD      5'd4
-`define    STORE     5'd5
-
 // parameters for icache
 `define    BLOCK_WIDTH      2
 `define    BLOCK_RANGE      1:0
@@ -57,6 +49,8 @@
 
 // parameters for reservation station
 `define    RS_WIDTH         4
+`define    RS_SIZE          16
 
 // parameters for reorder buffer
 `define    ROB_WIDTH        6
+`define    ROB_SIZE         64

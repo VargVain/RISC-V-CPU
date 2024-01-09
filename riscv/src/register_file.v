@@ -53,8 +53,12 @@ always @(posedge clk) begin
     end else if (rdy) begin
         if (flush) begin
             // flush
+            for (i = 0; i < 32; i = i + 1) begin
+                reg_dep[i] <= 0;
+                reg_has_dep[i] <= 0;
+            end
         end else begin
-            if (rob_valid) begin
+            if (rob_valid && rob_rd != 0) begin
                 register[rob_rd] <= rob_value;
                 if (reg_dep[rob_rd] == rob_index) begin
                     if (~issue_valid || issue_regname != rob_rd) reg_has_dep[rob_rd] <= 1'b0;

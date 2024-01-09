@@ -1,4 +1,4 @@
-`include "config.v"
+`include "config.vh"
 
 module arithmetic_logic_unit(
     // for RS
@@ -64,6 +64,33 @@ always @(*) begin
             res = pc + 4;
             real_jump = val1 > val2;
             real_jump_pc = pc + imm;
+        end
+        `LB: begin
+            res = val1 + imm;
+        end
+        `LH: begin
+            res = val1 + imm;
+        end
+        `LW: begin
+            res = val1 + imm;
+        end
+        `LBU: begin
+            res = val1 + imm;
+        end
+        `LHU: begin
+            res = val1 + imm;
+        end
+        `SB: begin
+            res = val1 + imm;
+            real_jump_pc = val2;
+        end
+        `SH: begin
+            res = val1 + imm;
+            real_jump_pc = val2;
+        end
+        `SW: begin
+            res = val1 + imm;
+            real_jump_pc = val2;
         end
         `ADDI: begin
             res = val1 + imm;

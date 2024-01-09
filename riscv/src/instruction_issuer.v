@@ -87,6 +87,9 @@ if (rst) begin
     end else if (rdy) begin
         if (flush) begin
             // flush
+            rs_valid <= 0;
+            rf_valid <= 0;
+            rob_valid <= 0;
         end else begin
             if (instr_in_valid) begin
                 rob_valid <= 1'b1;

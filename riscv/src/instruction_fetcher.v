@@ -45,9 +45,14 @@ always @(posedge clk) begin
     end else if (rdy) begin
         if (flush) begin
             // flush
+            stall <= 0;
+            instr_out_valid <= 0;
+            instr_in_addr <= 0;
+            if (new_pc_enable) begin
+                pc <= new_pc;
+            end
         end else begin
             if (instr_in_valid && ~full && ~stall) begin
-
                 instr_out_valid <= 1'b1;
                 instr_out <= instr_in;
                 instr_out_pc <= pc;

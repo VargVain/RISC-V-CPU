@@ -1,4 +1,4 @@
-`include "config.v"
+`include "config.vh"
 
 module decoder (
     input [31:0]        instr_in,

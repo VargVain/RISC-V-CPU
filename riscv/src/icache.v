@@ -1,11 +1,11 @@
-`include "config.v"
+`include "config.vh"
 
 module icache(
     input               clk,
     input               rst,
     input               rdy,
 
-    // for MEM
+    // for MC
     input               instr_in_valid,
     input [31:0]        instr_in,
     output reg          instr_in_enable,

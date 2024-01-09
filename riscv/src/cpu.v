@@ -34,7 +34,8 @@ wire                new_pc_enable;
 wire [31:0]         new_pc;
 wire                rob_full;
 wire                rs_full;
-wire                full = rob_full || rs_full;
+wire                lsb_full;
+wire                full = rob_full || rs_full || lsb_full;
 
 // MEM & ICache
 wire                icache_instr_out_enable;
@@ -126,6 +127,30 @@ wire                from_alu_real_jump;
 wire [31:0]         from_alu_real_jump_pc;
 wire [5:0]          from_alu_rob_index_out;
 
+// LSB & MC
+wire                mem_l_valid;
+wire [31:0]         mem_l_data;
+wire                mem_valid;
+wire [5:0]          mem_ls_opcode;
+wire                mem_ls;
+wire [31:0]         mem_ls_addr;
+wire [31:0]         mem_s_data;
+
+// LSB & ROB
+wire                lsb_rob_valid;
+wire [5:0]          lsb_rob_index;
+wire [5:0]          lsb_rob_opcode;
+wire [31:0]         lsb_rob_ls_addr;
+wire [31:0]         lsb_rob_s_val;
+wire                lsb_rob_ls_valid;
+wire [5:0]          lsb_rob_ls_index_out;
+wire [31:0]         lsb_rob_l_data;
+
+// LSB & RS
+wire                rs_lsb_valid;
+wire [5:0]          rs_lsb_rs_rob_index;
+wire [31:0]         rs_lsb_rs_res;
+
 memory_controller  memory_controller_inst (
     .clk(clk_in),
     .rst(rst_in),
@@ -138,7 +163,14 @@ memory_controller  memory_controller_inst (
     .instr_out_enable(icache_instr_out_enable),
     .instr_out_addr(icache_instr_out_addr),
     .instr_out_valid(icache_instr_out_valid),
-    .instr_out(icache_instr_out)
+    .instr_out(icache_instr_out),
+    .lsb_enable(mem_valid),
+    .lsb_ls_opcode(mem_ls_opcode),
+    .lsb_ls(mem_ls),
+    .lsb_ls_addr(mem_ls_addr),
+    .lsb_s_data(mem_s_data),
+    .lsb_valid(mem_l_valid),
+    .lsb_l_data(mem_l_data)
 );
 
 icache  icache_inst (
@@ -269,6 +301,14 @@ reorder_buffer  reorder_buffer_inst (
     .alu_jump(from_alu_real_jump),
     .alu_jump_pc(from_alu_real_jump_pc),
     .alu_rob_index(from_alu_rob_index_out),
+    .lsb_ls_enable(lsb_rob_ls_valid),
+    .lsb_rob_index_out(lsb_rob_ls_index_out),
+    .lsb_l_data(lsb_rob_l_data),
+    .lsb_enable(lsb_rob_valid),
+    .lsb_rob_index(lsb_rob_index),
+    .lsb_opcode(lsb_rob_opcode),
+    .lsb_ls_addr(lsb_rob_ls_addr),
+    .lsb_s_val(lsb_rob_s_val),
     .rob_full(rob_full),
     .flush(flush),
     .new_pc_enable(new_pc_enable),
@@ -299,6 +339,9 @@ reservation_station  reservation_station_inst (
     .alu_imm(to_alu_imm),
     .alu_pc(to_alu_pc),
     .alu_rob_index(to_alu_rob_index),
+    .lsb_valid(rs_lsb_valid),
+    .lsb_rs_rob_index_out(rs_lsb_rs_rob_index),
+    .lsb_rs_res(rs_lsb_rs_res),
     .flush(flush),
     .rs_full(rs_full)
 );
@@ -325,5 +368,30 @@ register_file  register_file_inst (
     .flush(flush)
   );
 
+  load_store_buffer  load_store_buffer_inst (
+    .clk(clk_in),
+    .rst(rst_in),
+    .rdy(rdy_in),
+    .mem_l_valid(mem_l_valid),
+    .mem_l_data(mem_l_data),
+    .mem_valid(mem_valid),
+    .mem_ls_opcode(mem_ls_opcode),
+    .mem_ls(mem_ls),
+    .mem_ls_addr(mem_ls_addr),
+    .mem_s_data(mem_s_data),
+    .rob_valid(lsb_rob_valid),
+    .rob_index(lsb_rob_index),
+    .rob_opcode(lsb_rob_opcode),
+    .rob_ls_addr(lsb_rob_ls_addr),
+    .rob_s_val(lsb_rob_s_val),
+    .rob_ls_valid(lsb_rob_ls_valid),
+    .rob_ls_index_out(lsb_rob_ls_index_out),
+    .rob_l_data(lsb_rob_l_data),
+    .lsb_valid(rs_lsb_valid),
+    .lsb_rs_rob_index(rs_lsb_rs_rob_index),
+    .lsb_rs_res(rs_lsb_rs_res),
+    .flush(flush),
+    .lsb_full(lsb_full)
+  );
 
 endmodule
