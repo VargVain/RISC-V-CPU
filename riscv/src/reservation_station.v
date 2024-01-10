@@ -190,7 +190,6 @@ module reservation_station(
           busy[first_ready] <= 1'b0;
         end else alu_opcode <= 0;
         if (alu_valid) begin
-          if (`DEBUG && cnt > `HEAD) $display("[alu %d] index: %d, val: %h", cnt, alu_rob_index_out, alu_res);
           for (i = 0; i < 16; i = i + 1) begin
             //$display("------%d, %d, %d", i, has_dep2[i], dep2[i]);
             if (has_dep1[i] && dep1[i] == alu_rob_index_out && ~alu_is_load) begin

@@ -57,4 +57,5 @@
 
 // parameters for debugging
 `define    DEBUG            0
-`define    HEAD             675
+`define    HEAD             368
+`define    TAIL             400

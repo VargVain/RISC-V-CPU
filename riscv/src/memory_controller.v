@@ -62,10 +62,14 @@ always @(posedge clk) begin
                     mem_a <= lsb_ls_addr;
                 end
                 else begin
-                    state <= 3'd2;
-                    mem_wr <= 1'b1;
-                    mem_dout <= lsb_s_data[7:0];
-                    mem_a <= lsb_ls_addr;
+                    if (io_buffer_full && (lsb_ls_addr == 196608 || lsb_ls_addr == 196612)) begin
+                    end else begin
+                        state <= 3'd2;
+                        mem_wr <= 1'b1;
+                        mem_dout <= lsb_s_data[7:0];
+                        mem_a <= lsb_ls_addr;
+                    end
+                    
                 end
             end
             else if (instr_out_enable) begin
@@ -96,23 +100,26 @@ always @(posedge clk) begin
             end
         end
         2: begin // STORE
-            if (progress == size - 1) begin
-                progress <= 3'b000;
-                state <= 3'd4;
-                lsb_valid <= 1'b1;
-                mem_wr <= 1'b0;
-                mem_a <= 32'b0;
-                if (`DEBUG && cnt > `HEAD) $display("[memory %d] stored %h to %h", cnt, lsb_s_data, mem_a);
-            end
-            else begin 
-                case (progress)
-                    3'b000: mem_dout <= lsb_s_data[15:8];
-                    3'b001: mem_dout <= lsb_s_data[23:16];
-                    3'b010: mem_dout <= lsb_s_data[31:24];
-                    default;
-                endcase
-                progress <= progress + 1;
-                mem_a <= mem_a + 1;
+            if (io_buffer_full && (lsb_ls_addr == 196608 || lsb_ls_addr == 196612)) begin
+            end else begin
+                if (progress == size - 1) begin
+                    progress <= 3'b000;
+                    state <= 3'd4;
+                    lsb_valid <= 1'b1;
+                    mem_wr <= 1'b0;
+                    mem_a <= 32'b0;
+                    if (`DEBUG && cnt > `HEAD && cnt < `TAIL) $display("[memory %d] stored %h to %h", cnt, lsb_s_data, mem_a);
+                end
+                else begin 
+                    case (progress)
+                        3'b000: mem_dout <= lsb_s_data[15:8];
+                        3'b001: mem_dout <= lsb_s_data[23:16];
+                        3'b010: mem_dout <= lsb_s_data[31:24];
+                        default;
+                    endcase
+                    progress <= progress + 1;
+                    mem_a <= mem_a + 1;
+                end
             end
         end
         3: begin // LOAD

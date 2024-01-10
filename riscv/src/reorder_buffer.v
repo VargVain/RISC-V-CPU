@@ -101,6 +101,7 @@ always @(posedge clk) begin
             if (!lsb_ls_enable && (!ready[head] || (opcode[head] >= `LB && opcode[head] <= `SW))) size <= size + 1;
         end
         if (alu_valid) begin
+            if (`DEBUG && cnt > `HEAD && cnt < `TAIL) $display("[alu %d] index: %d, val: %h, jump: %h", cnt, alu_rob_index, alu_res, alu_jump);
             ready[alu_rob_index] <= 1;
             res[alu_rob_index] <= alu_res;
             real_jump[alu_rob_index] <= alu_jump;
@@ -109,7 +110,7 @@ always @(posedge clk) begin
         if (lsb_ls_enable) begin
             head <= (head == 63) ? 0 : head + 1;
             if (!issue_valid) size <= size - 1;
-            if (`DEBUG && cnt > `HEAD) $display("[rob commit %d]: index [%d], opcode [%d], pc [%h], rd[%d], res[%h], res2[%h], val[%h]", cnt, lsb_rob_index_out, opcode[lsb_rob_index_out], pc[lsb_rob_index_out], rd[lsb_rob_index_out], res[lsb_rob_index_out], jump_pc[lsb_rob_index_out], lsb_l_data);
+            if (`DEBUG && cnt > `HEAD && cnt < `TAIL) $display("[rob commit %d]: index [%d], opcode [%d], pc [%h], rd[%d], res[%h], res2[%h], val[%h]", cnt, lsb_rob_index_out, opcode[lsb_rob_index_out], pc[lsb_rob_index_out], rd[lsb_rob_index_out], res[lsb_rob_index_out], jump_pc[lsb_rob_index_out], lsb_l_data);
             if (opcode[lsb_rob_index_out] >= `LB && opcode[lsb_rob_index_out] <= `LHU) begin
                 rf_valid <= 1'b1;
                 rf_index <= lsb_rob_index_out;
@@ -120,13 +121,13 @@ always @(posedge clk) begin
         end
         if (ready[head]) begin
             if (opcode[head] < `LB || opcode[head] > `SW) begin
-                if (`DEBUG && cnt > `HEAD) $display("[rob commit %d]: index [%d], opcode [%d], pc [%h], rd[%d], res[%h], res2[%h]", cnt, head, opcode[head], pc[head], rd[head], res[head], jump_pc[head]);
+                if (`DEBUG && cnt > `HEAD && cnt < `TAIL) $display("[rob commit %d]: index [%d], opcode [%d], pc [%h], rd[%d], res[%h], res2[%h]", cnt, head, opcode[head], pc[head], rd[head], res[head], jump_pc[head]);
                 rf_valid <= 1'b1;
                 rf_index <= head;
                 rf_rd <= rd[head];
                 rf_value <= res[head];
                 if (jump[head] != real_jump[head]) begin // flush
-                    if (`DEBUG && cnt > `HEAD) $display("flush!");
+                    if (`DEBUG && cnt > `HEAD && cnt < `TAIL) $display("flush!");
                     flush <= 1'b1;
                     new_pc_enable <= 1'b1;
                     new_pc <= real_jump[head] ? jump_pc[head] : res[head];
