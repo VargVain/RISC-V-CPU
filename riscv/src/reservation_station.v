@@ -41,19 +41,19 @@ module reservation_station(
 
   );
 
-  reg [16:0]              busy;
-  reg [5:0]               rob_index [16:0];
-  reg [31:0]              val1 [16:0];
-  reg [5:0]               dep1 [16:0];
-  reg [16:0]              has_dep1;
-  reg [31:0]              val2 [16:0];
-  reg [5:0]               dep2 [16:0];
-  reg [16:0]              has_dep2;
-  reg [31:0]              imm [16:0];
-  reg [31:0]              pc [16:0];
-  reg [5:0]               opcode [16:0];
+  reg [15:0]              busy;
+  reg [5:0]               rob_index [15:0];
+  reg [31:0]              val1 [15:0];
+  reg [5:0]               dep1 [15:0];
+  reg [15:0]              has_dep1;
+  reg [31:0]              val2 [15:0];
+  reg [5:0]               dep2 [15:0];
+  reg [15:0]              has_dep2;
+  reg [31:0]              imm [15:0];
+  reg [31:0]              pc [15:0];
+  reg [5:0]               opcode [15:0];
 
-  wire [16:0] ready = ~has_dep1 & ~has_dep2;
+  wire [15:0] ready = ~has_dep1 & ~has_dep2;
   wire [4:0] first_empty = ~busy[0]  ? 0  :
        ~busy[1]  ? 1  :
        ~busy[2]  ? 2  :
@@ -72,7 +72,23 @@ module reservation_station(
        ~busy[15] ? 15 :
        16 ;
   wire has_empty = first_empty != 16;
-  assign rs_full = first_empty == 15 || first_empty == 16;
+  assign rs_full = first_empty == 16 || 
+        busy == 16'hfffe || 
+        busy == 16'hfffd ||
+        busy == 16'hfffb ||
+        busy == 16'hfff7 ||
+        busy == 16'hffef ||
+        busy == 16'hffdf ||
+        busy == 16'hffbf ||
+        busy == 16'hff7f ||
+        busy == 16'hfeff ||
+        busy == 16'hfdff ||
+        busy == 16'hfbff ||
+        busy == 16'hf7ff ||
+        busy == 16'hefff ||
+        busy == 16'hdfff ||
+        busy == 16'hbfff ||
+        busy == 16'h7fff ;
 
   wire [4:0] first_ready = ready[0] && busy[0]  ? 0  :
        ready[1] && busy[1]  ? 1  :
@@ -142,7 +158,7 @@ module reservation_station(
         alu_pc <= 0;
         alu_rob_index <= 0;
       end else begin
-        if (has_empty && issue_valid) begin
+        if (issue_valid && has_empty) begin
           opcode[first_empty] <= issue_opcode;
           rob_index[first_empty] <= issue_rob_index;
 
@@ -203,6 +219,7 @@ module reservation_station(
           end
         end
         if (lsb_valid) begin
+          if (`DEBUG && cnt > `HEAD && cnt < `TAIL) $display("[lsb valid %d] rob_index=%d, val=%d", cnt, lsb_rs_rob_index_out, lsb_rs_res);
           for (i = 0; i < 16; i = i + 1) begin
             if (has_dep1[i] && dep1[i] == lsb_rs_rob_index_out) begin
               val1[i] <= lsb_rs_res;

@@ -104,7 +104,6 @@ if (rst) begin
             last_regrename <= 0;
         end else begin
             if (instr_in_valid) begin
-                if (`DEBUG && cnt > `HEAD && cnt < `TAIL) $display("last_regname: %d, rename: %d", last_regname, last_regrename);
                 if (`DEBUG && cnt > `HEAD && cnt < `TAIL) $display("[issue %d]: rob_index=%d pc=%h opcode=%d rd=%d {rs1=%d dep1=%d has_dep1=%d val1=%h} {rs2=%d dep2=%d has_dep2=%d val2=%h} imm=%h", cnt, rob_next_index, pc, opcode, rd, rs1, dep1, has_dep1, val1, rs2, dep2, has_dep2, val2, imm);
                 rob_valid <= 1'b1;
                 rob_rd <= rd;

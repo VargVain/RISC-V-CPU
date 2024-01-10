@@ -61,7 +61,7 @@ reg [31:0]              pc [63:0];
 reg [5:0]               next;
 reg [5:0]               head;
 reg [6:0]               size;
-wire full = size == 63 || size == 64;
+wire full = size >= 60;
 
 assign rob_full = full;
 assign issue_value_valid1 = (opcode[issue_check1] < `LB || opcode[issue_check1] > `LHU) && (ready[issue_check1] || (alu_valid && alu_rob_index == issue_check1));
@@ -70,6 +70,11 @@ assign issue_value1 = issue_value_valid1 ? (ready[issue_check1] ? res[issue_chec
 assign issue_value2 = issue_value_valid2 ? (ready[issue_check2] ? res[issue_check2] : alu_res) : 0;
 
 integer i, cnt=0;
+
+//integer debug_file;
+//initial begin
+//    debug_file = $fopen("rob_debug.txt");
+//end
 
 always @(posedge clk) begin
     cnt = cnt + 1;
@@ -108,9 +113,12 @@ always @(posedge clk) begin
             jump_pc[alu_rob_index] <= alu_jump_pc;
         end
         if (lsb_ls_enable) begin
+
+            //$fdisplay(debug_file, "[rob commit] pc: %x, op: %d", pc[head], opcode[head]);
+
             head <= (head == 63) ? 0 : head + 1;
             if (!issue_valid) size <= size - 1;
-            if (`DEBUG && cnt > `HEAD && cnt < `TAIL) $display("[rob commit %d]: index [%d], opcode [%d], pc [%h], rd[%d], res[%h], res2[%h], val[%h]", cnt, lsb_rob_index_out, opcode[lsb_rob_index_out], pc[lsb_rob_index_out], rd[lsb_rob_index_out], res[lsb_rob_index_out], jump_pc[lsb_rob_index_out], lsb_l_data);
+            if (`DEBUG && cnt > `HEAD && cnt < `TAIL) $display("[rob commit %d]: index [%d], opcode [%d], pc [%h], rd[%d], res[%h], res2[%h], val[%h], size[%d]", cnt, lsb_rob_index_out, opcode[lsb_rob_index_out], pc[lsb_rob_index_out], rd[lsb_rob_index_out], res[lsb_rob_index_out], jump_pc[lsb_rob_index_out], lsb_l_data, size);
             if (opcode[lsb_rob_index_out] >= `LB && opcode[lsb_rob_index_out] <= `LHU) begin
                 rf_valid <= 1'b1;
                 rf_index <= lsb_rob_index_out;
@@ -121,7 +129,10 @@ always @(posedge clk) begin
         end
         if (ready[head]) begin
             if (opcode[head] < `LB || opcode[head] > `SW) begin
-                if (`DEBUG && cnt > `HEAD && cnt < `TAIL) $display("[rob commit %d]: index [%d], opcode [%d], pc [%h], rd[%d], res[%h], res2[%h]", cnt, head, opcode[head], pc[head], rd[head], res[head], jump_pc[head]);
+
+                //$fdisplay(debug_file, "[rob commit] pc: %x, op: %d", pc[head], opcode[head]);
+
+                if (`DEBUG && cnt > `HEAD && cnt < `TAIL) $display("[rob commit %d]: index [%d], opcode [%d], pc [%h], rd[%d], res[%h], res2[%h], size[%d]", cnt, head, opcode[head], pc[head], rd[head], res[head], jump_pc[head], size);
                 rf_valid <= 1'b1;
                 rf_index <= head;
                 rf_rd <= rd[head];
