@@ -47,12 +47,11 @@ always @(posedge clk) begin
             // flush
             stall <= 0;
             instr_out_valid <= 0;
-            instr_in_addr <= 0;
-            if (new_pc_enable) begin
-                pc <= new_pc;
-            end
+            pc <= new_pc;
+            instr_in_addr <= new_pc;
         end else begin
             if (instr_in_valid && ~full && ~stall) begin
+                //$display("pc %h, inst %h", pc, instr_in);
                 instr_out_valid <= 1'b1;
                 instr_out <= instr_in;
                 instr_out_pc <= pc;
@@ -82,6 +81,7 @@ always @(posedge clk) begin
             if (stall && new_pc_enable) begin // stupid
                 stall <= 1'b0;
                 pc <= new_pc;
+                instr_in_addr <= new_pc;
             end
         end
     end

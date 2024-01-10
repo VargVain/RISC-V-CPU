@@ -70,13 +70,16 @@ module load_store_buffer (
                     end
                 end
                 2'd1: begin // STORE
-                    if (mem_valid) begin
+                    if (mem_l_valid) begin
+                        mem_valid <= 0;
                         rob_ls_valid <= 1;
+                        rob_ls_index_out <= index;
                         state <= 0;
                     end
                 end
                 2'd2: begin // LOAD
-                    if (mem_valid) begin    
+                    if (mem_l_valid) begin
+                        mem_valid <= 0;    
                         rob_ls_valid <= 1;
                         rob_ls_index_out <= index;
                         rob_l_data <= mem_l_data;

@@ -54,3 +54,7 @@
 // parameters for reorder buffer
 `define    ROB_WIDTH        6
 `define    ROB_SIZE         64
+
+// parameters for debugging
+`define    DEBUG            0
+`define    HEAD             675

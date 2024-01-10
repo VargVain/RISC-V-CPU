@@ -21,8 +21,10 @@ reg [31:0]              data [`INDEX_SIZE-1:0];
 reg [`INDEX_SIZE-1:0]   valid;
 reg [`TAG_WIDTH-1:0]    tag [`INDEX_SIZE-1:0];
 reg                     loading;
+reg [31:0]              loading_addr;
 
 wire [`INDEX_WIDTH-1:0] pc_index = pc[`INDEX_RANGE];
+wire [`INDEX_WIDTH-1:0] loading_addr_index = loading_addr[`INDEX_RANGE];
 wire hit = valid[pc_index] && (tag[pc_index] == pc[`TAG_RANGE]);
 
 assign instr_out_valid = hit;
@@ -34,6 +36,7 @@ always @(posedge clk) begin
     if (rst) begin
         // reset
         loading <= 0;
+        loading_addr <= 0;
         for (i = 0; i < 256; i = i + 1) begin
             valid[i] <= 0;
         end
@@ -41,14 +44,15 @@ always @(posedge clk) begin
         instr_in_enable <= 0;
     end else if (rdy) begin
         if (instr_in_valid && loading == 1'b1) begin
-            data[pc_index] <= instr_in;
-            valid[pc_index] <= 1'b1;
-            tag[pc_index] <= instr_in_addr[`TAG_RANGE];
+            data[loading_addr_index] <= instr_in;
+            valid[loading_addr_index] <= 1'b1;
+            tag[loading_addr_index] <= instr_in_addr[`TAG_RANGE];
             instr_in_enable <= 1'b0;
             loading <= 1'b0;
         end
         if (loading == 1'b0 && ~hit) begin
             instr_in_addr <= pc;
+            loading_addr <= pc;
             instr_in_enable <= 1'b1;
             loading <= 1'b1;
         end

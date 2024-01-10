@@ -67,11 +67,11 @@ wire [31:0]         dec_imm;
 wire [31:0]         dec_instr_decode;
 
 // IU & ROB
-wire [5:0]          rob_next_index;
 wire                rob_valid;
 wire [4:0]          rob_rd;
 wire                rob_jumped;
 wire [5:0]          rob_opcode;
+wire [31:0]         rob_pc;
 wire                rob_value_valid1;
 wire                rob_value_valid2;
 wire [31:0]         rob_value1;
@@ -126,6 +126,7 @@ wire [31:0]         from_alu_res;
 wire                from_alu_real_jump;
 wire [31:0]         from_alu_real_jump_pc;
 wire [5:0]          from_alu_rob_index_out;
+wire                from_alu_is_load;
 
 // LSB & MC
 wire                mem_l_valid;
@@ -219,11 +220,11 @@ instruction_issuer  instruction_issuer_inst (
     .rd(dec_rd),
     .imm(dec_imm),
     .instr_decode(dec_instr_decode),
-    .rob_next_index(rob_next_index),
     .rob_valid(rob_valid),
     .rob_rd(rob_rd),
     .rob_jumped(rob_jumped),
     .rob_opcode(rob_opcode),
+    .rob_pc(rob_pc),
     .rob_value_valid1(rob_value_valid1),
     .rob_value_valid2(rob_value_valid2),
     .rob_value1(rob_value1),
@@ -274,7 +275,9 @@ arithmetic_logic_unit  arithmetic_logic_unit_inst (
     .res(from_alu_res),
     .real_jump(from_alu_real_jump),
     .real_jump_pc(from_alu_real_jump_pc),
-    .rob_index_out(from_alu_rob_index_out)
+    .rob_index_out(from_alu_rob_index_out),
+    .is_load(from_alu_is_load),
+    .flush(flush)
 );
 
 reorder_buffer  reorder_buffer_inst (
@@ -285,7 +288,7 @@ reorder_buffer  reorder_buffer_inst (
     .issue_rd(rob_rd),
     .issue_jump(rob_jumped),
     .issue_opcode(rob_opcode),
-    .next_index(rob_next_index),
+    .issue_pc(rob_pc),
     .issue_check1(rob_check1),
     .issue_check2(rob_check2),
     .issue_value_valid1(rob_value_valid1),
@@ -333,6 +336,7 @@ reservation_station  reservation_station_inst (
     .alu_valid(from_alu_valid),
     .alu_res(from_alu_res),
     .alu_rob_index_out(from_alu_rob_index_out),
+    .alu_is_load(from_alu_is_load),
     .alu_opcode(to_alu_opcode),
     .alu_val1(to_alu_val1),
     .alu_val2(to_alu_val2),
@@ -392,6 +396,15 @@ register_file  register_file_inst (
     .lsb_rs_res(rs_lsb_rs_res),
     .flush(flush),
     .lsb_full(lsb_full)
+  );
+
+  decoder  decoder_inst (
+    .instr_in(dec_instr_decode),
+    .opcode(dec_opcode),
+    .rs1_out(dec_rs1),
+    .rs2_out(dec_rs2),
+    .rd_out(dec_rd),
+    .imm_out(dec_imm)
   );
 
 endmodule

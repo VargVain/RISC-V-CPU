@@ -14,12 +14,19 @@ module arithmetic_logic_unit(
     output reg [31:0]    res,
     output reg           real_jump,
     output reg [31:0]    real_jump_pc,
-    output reg [5:0]     rob_index_out
+    output reg [5:0]     rob_index_out,
+    output reg           is_load,
+
+    // for CDB
+    input                flush
 );
 
 always @(*) begin
     rob_index_out = rob_index;
-    valid = opcode != 0;
+    valid = opcode != 0 && ~flush;
+    real_jump = 0;
+    real_jump_pc = 0;
+    is_load = opcode >= `LB && opcode <= `LHU;
     case (opcode)
         `LUI: begin
             res = imm;
@@ -62,7 +69,7 @@ always @(*) begin
         end
         `BGEU: begin
             res = pc + 4;
-            real_jump = val1 > val2;
+            real_jump = val1 >= val2;
             real_jump_pc = pc + imm;
         end
         `LB: begin
@@ -96,7 +103,7 @@ always @(*) begin
             res = val1 + imm;
         end
         `SLTI: begin
-            res = val1 < $signed(imm) ? 1 : 0;
+            res = $signed(val1) < $signed(imm) ? 1 : 0;
         end
         `SLTIU: begin
             res = val1 < $signed(imm) ? 1 : 0;
@@ -111,13 +118,13 @@ always @(*) begin
             res = val1 & imm;
         end
         `SLLI: begin
-            res = val1 << imm;
+            res = val1 << imm[4:0];
         end
         `SRLI: begin
-            res = val1 >> imm;
+            res = val1 >> imm[4:0];
         end
         `SRAI: begin
-            res = $signed(val1) >>> imm;
+            res = $signed(val1) >>> imm[4:0];
         end
         `ADD: begin
             res = val1 + val2;

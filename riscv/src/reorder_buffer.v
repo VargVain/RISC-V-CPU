@@ -10,8 +10,7 @@ module reorder_buffer(
     input [4:0]         issue_rd,
     input               issue_jump,
     input [5:0]         issue_opcode,
-
-    output [5:0]        next_index,
+    input [31:0]        issue_pc,
 
     input [5:0]         issue_check1,
     input [5:0]         issue_check2,
@@ -33,7 +32,7 @@ module reorder_buffer(
     input [31:0]        alu_jump_pc,
     input [5:0]         alu_rob_index,
 
-    // LSB
+    // for LSB
     input               lsb_ls_enable,
     input [5:0]         lsb_rob_index_out,
     input [31:0]        lsb_l_data,
@@ -57,20 +56,23 @@ reg [63:0]              real_jump;
 reg [31:0]              jump_pc [63:0]; // also serve as store data
 reg [5:0]               opcode [63:0];
 reg [31:0]              res [63:0];
+reg [31:0]              pc [63:0];
 
 reg [5:0]               next;
 reg [5:0]               head;
 reg [6:0]               size;
-wire [5:0] after_next = (next == 63) ? 0 : next + 1;
-wire [5:0] after_head = (head == 63) ? 0 : head + 1;
 wire full = size == 63 || size == 64;
 
 assign rob_full = full;
-assign next_index = next;
+assign issue_value_valid1 = (opcode[issue_check1] < `LB || opcode[issue_check1] > `LHU) && (ready[issue_check1] || (alu_valid && alu_rob_index == issue_check1));
+assign issue_value_valid2 = (opcode[issue_check2] < `LB || opcode[issue_check2] > `LHU) && (ready[issue_check2] || (alu_valid && alu_rob_index == issue_check2));
+assign issue_value1 = issue_value_valid1 ? (ready[issue_check1] ? res[issue_check1] : alu_res) : 0;
+assign issue_value2 = issue_value_valid2 ? (ready[issue_check2] ? res[issue_check2] : alu_res) : 0;
 
-integer i;
+integer i, cnt=0;
 
 always @(posedge clk) begin
+    cnt = cnt + 1;
     if (rst || flush) begin
         // reset
         flush <= 0;
@@ -93,45 +95,51 @@ always @(posedge clk) begin
             rd[next] <= issue_rd;
             jump[next] <= issue_jump;
             opcode[next] <= issue_opcode;
+            pc[next] <= issue_pc;
             ready[next] <= 1'b0;
-            next <= after_next;
+            next <= (next == 63) ? 0 : next + 1;
             if (!lsb_ls_enable && (!ready[head] || (opcode[head] >= `LB && opcode[head] <= `SW))) size <= size + 1;
         end
         if (alu_valid) begin
+            ready[alu_rob_index] <= 1;
             res[alu_rob_index] <= alu_res;
             real_jump[alu_rob_index] <= alu_jump;
             jump_pc[alu_rob_index] <= alu_jump_pc;
         end
         if (lsb_ls_enable) begin
-            head <= after_head;
+            head <= (head == 63) ? 0 : head + 1;
             if (!issue_valid) size <= size - 1;
+            if (`DEBUG && cnt > `HEAD) $display("[rob commit %d]: index [%d], opcode [%d], pc [%h], rd[%d], res[%h], res2[%h], val[%h]", cnt, lsb_rob_index_out, opcode[lsb_rob_index_out], pc[lsb_rob_index_out], rd[lsb_rob_index_out], res[lsb_rob_index_out], jump_pc[lsb_rob_index_out], lsb_l_data);
             if (opcode[lsb_rob_index_out] >= `LB && opcode[lsb_rob_index_out] <= `LHU) begin
                 rf_valid <= 1'b1;
-                rf_index <= head;
-                rf_rd <= rd[head];
+                rf_index <= lsb_rob_index_out;
+                rf_rd <= rd[lsb_rob_index_out];
                 rf_value <= lsb_l_data;
             end
+            ready[head] <= 0;
         end
         if (ready[head]) begin
             if (opcode[head] < `LB || opcode[head] > `SW) begin
+                if (`DEBUG && cnt > `HEAD) $display("[rob commit %d]: index [%d], opcode [%d], pc [%h], rd[%d], res[%h], res2[%h]", cnt, head, opcode[head], pc[head], rd[head], res[head], jump_pc[head]);
                 rf_valid <= 1'b1;
                 rf_index <= head;
                 rf_rd <= rd[head];
                 rf_value <= res[head];
-                if (jump[head] != real_jump[head]) begin
+                if (jump[head] != real_jump[head]) begin // flush
+                    if (`DEBUG && cnt > `HEAD) $display("flush!");
                     flush <= 1'b1;
                     new_pc_enable <= 1'b1;
                     new_pc <= real_jump[head] ? jump_pc[head] : res[head];
                 end else begin
                     flush <= 1'b0;
-                    new_pc_enable <= 1'b0;
                     if (opcode[head] == `JALR) begin
                         new_pc_enable <= 1'b1;
-                        new_pc <= res[head];
-                    end
+                        new_pc <= jump_pc[head];
+                    end else new_pc_enable <= 1'b0;
                 end
-                head <= after_head;
+                head <= (head == 63) ? 0 : head + 1;
                 if (!issue_valid) size <= size - 1;
+                ready[head] <= 0;
             end else begin
                 ready[head] <= 0;
                 lsb_enable <= 1;
@@ -142,9 +150,10 @@ always @(posedge clk) begin
             end
         end else begin
             flush <= 1'b0;
-            rf_valid <= 1'b0;
+            if (~lsb_ls_enable) rf_valid <= 1'b0;
             new_pc_enable <= 1'b0;
             flush <= 1'b0;
+            lsb_enable <= 0;
         end
     end
 end

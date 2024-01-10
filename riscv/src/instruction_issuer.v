@@ -1,3 +1,5 @@
+`include "config.vh"
+
 module instruction_issuer(
     input               clk,
     input               rst,
@@ -18,12 +20,11 @@ module instruction_issuer(
     output [31:0]       instr_decode,
 
     // for ROB
-    input [5:0]         rob_next_index,
-
     output reg          rob_valid,
     output reg [4:0]    rob_rd,
     output reg          rob_jumped,
     output reg [5:0]    rob_opcode,
+    output reg [31:0]   rob_pc,
 
     input               rob_value_valid1,
     input               rob_value_valid2,
@@ -59,8 +60,6 @@ module instruction_issuer(
     output reg [4:0]    rf_regname,
     output reg [5:0]    rf_regrename,
 
-    // for LSB
-
     // for CDB
     input               flush
 );
@@ -71,30 +70,47 @@ assign rf_check2 = rs2;
 assign rob_check1 = rf_dep1;
 assign rob_check2 = rf_dep2;
 
-wire has_dep1 = rf_has_dep1 && ~rob_value_valid1;
-wire has_dep2 = rf_has_dep2 && ~rob_value_valid2;
-wire [5:0] dep1 = has_dep1 ? rf_dep1 : 0;
-wire [5:0] dep2 = has_dep2 ? rf_dep2 : 0;
-wire [31:0] val1 = rf_has_dep1 ? (rob_value_valid1 ? rob_value1 : 0) : rf_val1;
-wire [31:0] val2 = rf_has_dep2 ? (rob_value_valid2 ? rob_value2 : 0) : rf_val2;
+reg [5:0] rob_next_index;
+reg [4:0] last_regname;
+reg [5:0] last_regrename;
+
+wire has_dep1 = rs1 == 0 ? 0 : (rf_has_dep1 && ~rob_value_valid1 || last_regname != 0 && rs1 == last_regname);
+wire has_dep2 = rs2 == 0 ? 0 : (rf_has_dep2 && ~rob_value_valid2 || last_regname != 0 && rs2 == last_regname);
+wire [5:0] dep1 = has_dep1 ? (rf_has_dep1 && ~rob_value_valid1 ? rf_dep1 : last_regrename) : 0;
+wire [5:0] dep2 = has_dep2 ? (rf_has_dep2 && ~rob_value_valid2 ? rf_dep2 : last_regrename) : 0;
+wire [31:0] val1 = rs1 == 0 ? 0 : rf_has_dep1 ? (rob_value_valid1 ? rob_value1 : 0) : rf_val1;
+wire [31:0] val2 = rs2 == 0 ? 0 : rf_has_dep2 ? (rob_value_valid2 ? rob_value2 : 0) : rf_val2;
+
+integer cnt=0;
 
 always @(posedge clk) begin
+    cnt = cnt + 1;
 if (rst) begin
         // reset
         rs_valid <= 0;
         rf_valid <= 0;
         rob_valid <= 0;
+        rob_next_index <= 0;
+        last_regname <= 0;
+        last_regrename <= 0;
     end else if (rdy) begin
         if (flush) begin
             // flush
             rs_valid <= 0;
             rf_valid <= 0;
             rob_valid <= 0;
+            rob_next_index <= 0;
+            last_regname <= 0;
+            last_regrename <= 0;
         end else begin
             if (instr_in_valid) begin
+                if (`DEBUG && cnt > `HEAD) $display("%d", rf_has_dep2);
+                if (`DEBUG && cnt > `HEAD) $display("[issue %d]: rob_index=%d pc=%h opcode=%d rd=%d {rs1=%d dep1=%d has_dep1=%d val1=%h} {rs2=%d dep2=%d has_dep2=%d val2=%h} imm=%h", cnt, rob_next_index, pc, opcode, rd, rs1, dep1, has_dep1, val1, rs2, dep2, has_dep2, val2, imm);
                 rob_valid <= 1'b1;
                 rob_rd <= rd;
                 rob_jumped <= jumped;
+                rob_opcode <= opcode;
+                rob_pc <= pc;
 
                 rs_valid <= 1'b1;
                 rs_opcode <= opcode;
@@ -111,10 +127,15 @@ if (rst) begin
                 rf_valid <= 1'b1;
                 rf_regname <= rd;
                 rf_regrename <= rob_next_index;
+
+                rob_next_index <= rob_next_index == 63 ? 0 : rob_next_index + 1;
+                last_regname <= rd;
+                last_regrename <= rob_next_index;
             end else begin
                 rob_valid <= 1'b0;
                 rs_valid <= 1'b0;
                 rf_valid <= 1'b0;
+                last_regname <= 0;
             end
         end
     end
