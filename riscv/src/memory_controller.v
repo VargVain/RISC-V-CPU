@@ -108,7 +108,6 @@ always @(posedge clk) begin
                     lsb_valid <= 1'b1;
                     mem_wr <= 1'b0;
                     mem_a <= 32'b0;
-                    if (`DEBUG && cnt > `HEAD && cnt < `TAIL) $display("[memory %d] stored %h to %h", cnt, lsb_s_data, mem_a);
                 end
                 else begin 
                     case (progress)

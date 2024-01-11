@@ -72,23 +72,9 @@ module reservation_station(
        ~busy[15] ? 15 :
        16 ;
   wire has_empty = first_empty != 16;
-  assign rs_full = first_empty == 16 || 
-        busy == 16'hfffe || 
-        busy == 16'hfffd ||
-        busy == 16'hfffb ||
-        busy == 16'hfff7 ||
-        busy == 16'hffef ||
-        busy == 16'hffdf ||
-        busy == 16'hffbf ||
-        busy == 16'hff7f ||
-        busy == 16'hfeff ||
-        busy == 16'hfdff ||
-        busy == 16'hfbff ||
-        busy == 16'hf7ff ||
-        busy == 16'hefff ||
-        busy == 16'hdfff ||
-        busy == 16'hbfff ||
-        busy == 16'h7fff ;
+  wire [3:0] first_empty_index = first_empty[3:0];
+  reg [4:0] size;
+  assign rs_full = size >= 14;
 
   wire [4:0] first_ready = ready[0] && busy[0]  ? 0  :
        ready[1] && busy[1]  ? 1  :
@@ -108,6 +94,7 @@ module reservation_station(
        ready[15] && busy[15] ? 15 :
        16 ;
   wire has_ready = first_ready != 16;
+  wire [3:0] first_ready_index = first_ready[3:0];
 
   integer i, cnt=0;
 
@@ -134,6 +121,7 @@ module reservation_station(
       alu_imm <= 0;
       alu_pc <= 0;
       alu_rob_index <= 0;
+      size <= 0;
     end
     else if (rdy) begin
       if (flush) begin
@@ -157,53 +145,58 @@ module reservation_station(
         alu_imm <= 0;
         alu_pc <= 0;
         alu_rob_index <= 0;
+        size <= 0;
       end else begin
-        if (issue_valid && has_empty) begin
-          opcode[first_empty] <= issue_opcode;
-          rob_index[first_empty] <= issue_rob_index;
+        if (issue_valid) begin
+          //if (~has_empty) $display("[Warning] rs full at cnt: %d", cnt);
+          if (`DEBUG && cnt > `HEAD && cnt < `TAIL) $display("[rs %d] rob_index: %d first_empty: %d", cnt, issue_rob_index, first_empty);
+          opcode[first_empty_index] <= issue_opcode;
+          rob_index[first_empty_index] <= issue_rob_index;
 
           if (issue_has_dep1 && alu_valid && issue_dep1 == alu_rob_index_out && ~alu_is_load) begin
-            val1[first_empty] <= alu_res;
-            dep1[first_empty] <= 0;
-            has_dep1[first_empty] <= 0;
+            val1[first_empty_index] <= alu_res;
+            dep1[first_empty_index] <= 0;
+            has_dep1[first_empty_index] <= 0;
           end else if (issue_has_dep1 && lsb_valid && issue_dep1 == lsb_rs_rob_index_out) begin
-            val1[first_empty] <= lsb_rs_res;
-            dep1[first_empty] <= 0;
-            has_dep1[first_empty] <= 0;
+            val1[first_empty_index] <= lsb_rs_res;
+            dep1[first_empty_index] <= 0;
+            has_dep1[first_empty_index] <= 0;
           end else begin
-            val1[first_empty] <= issue_val1;
-            dep1[first_empty] <= issue_dep1;
-            has_dep1[first_empty] <= issue_has_dep1;
+            val1[first_empty_index] <= issue_val1;
+            dep1[first_empty_index] <= issue_dep1;
+            has_dep1[first_empty_index] <= issue_has_dep1;
           end
           
           if (issue_has_dep2 && alu_valid && issue_dep2 == alu_rob_index_out && ~alu_is_load) begin
-            val2[first_empty] <= alu_res;
-            dep2[first_empty] <= 0;
-            has_dep2[first_empty] <= 0;
+            val2[first_empty_index] <= alu_res;
+            dep2[first_empty_index] <= 0;
+            has_dep2[first_empty_index] <= 0;
           end else if (issue_has_dep2 && lsb_valid && issue_dep2 == lsb_rs_rob_index_out) begin
-            val2[first_empty] <= lsb_rs_res;
-            dep2[first_empty] <= 0;
-            has_dep2[first_empty] <= 0;
+            val2[first_empty_index] <= lsb_rs_res;
+            dep2[first_empty_index] <= 0;
+            has_dep2[first_empty_index] <= 0;
           end else begin
-            val2[first_empty] <= issue_val2;
-            dep2[first_empty] <= issue_dep2;
-            has_dep2[first_empty] <= issue_has_dep2;
+            val2[first_empty_index] <= issue_val2;
+            dep2[first_empty_index] <= issue_dep2;
+            has_dep2[first_empty_index] <= issue_has_dep2;
           end
 
-          imm[first_empty] <= issue_imm;
-          pc[first_empty] <= issue_pc;
-          busy[first_empty] <= 1'b1;
+          imm[first_empty_index] <= issue_imm;
+          pc[first_empty_index] <= issue_pc;
+          busy[first_empty_index] <= 1'b1;
+          if (!has_ready) size <= size + 1;
         end
         if (has_ready) begin
           //$display("[rs ready]: opcode=%d, val1=%d, val2=%d, rob_index=%d", opcode[first_ready], val1[first_ready], val2[first_ready], rob_index[first_ready]);
           //$display("ready sheet: %b, busy sheet: %b", ready, busy);
-          alu_opcode <= opcode[first_ready];
-          alu_val1 <= val1[first_ready];
-          alu_val2 <= val2[first_ready];
-          alu_imm <= imm[first_ready];
-          alu_pc <= pc[first_ready];
-          alu_rob_index <= rob_index[first_ready];
-          busy[first_ready] <= 1'b0;
+          alu_opcode <= opcode[first_ready_index];
+          alu_val1 <= val1[first_ready_index];
+          alu_val2 <= val2[first_ready_index];
+          alu_imm <= imm[first_ready_index];
+          alu_pc <= pc[first_ready_index];
+          alu_rob_index <= rob_index[first_ready_index];
+          busy[first_ready_index] <= 1'b0;
+          if (!issue_valid) size <= size - 1;
         end else alu_opcode <= 0;
         if (alu_valid) begin
           for (i = 0; i < 16; i = i + 1) begin
@@ -219,7 +212,7 @@ module reservation_station(
           end
         end
         if (lsb_valid) begin
-          if (`DEBUG && cnt > `HEAD && cnt < `TAIL) $display("[lsb valid %d] rob_index=%d, val=%d", cnt, lsb_rs_rob_index_out, lsb_rs_res);
+          if (`DEBUG && cnt > `HEAD && cnt < `TAIL) $display("[lsb  valid %d] rob_index=%d, val=%d", cnt, lsb_rs_rob_index_out, lsb_rs_res);
           for (i = 0; i < 16; i = i + 1) begin
             if (has_dep1[i] && dep1[i] == lsb_rs_rob_index_out) begin
               val1[i] <= lsb_rs_res;

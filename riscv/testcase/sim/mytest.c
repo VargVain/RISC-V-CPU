@@ -1,82 +1,43 @@
 #include "io.h"
-int make[3][3];
-int color[10];
-int count[1];
-int i;
-int j;
+int N = 8;
+int row[8];
+int col[8];
+int d[2][16];
 
-void origin(int N)
-{
-    for (i = 0; i < N; i ++ ) {
-        for (j = 0; j < N; j ++ )
-        make[i][j] = 0;
-    }	
+void printBoard() {
+    int i;
+    int j;
+    for (i = 0; i < N; i++) {
+        for (j = 0; j < N; j++) {
+            if (col[i] == j)
+                print(" O");
+            else
+                print(" .");
+        }
+        println("");
+    }
+    println("");
+    sleep(50); // to prevent UART buffer from overflowing
 }
 
-void search(int x, int y, int z)
-{
-	int s;
-	int i;
-	int j;
-    if ((y > 0 || y < 0) || x == 0 || make[x-1][0] + make[x-1][1] + make[x-1][2] == 15)
-    {
-        if (x == 2 && y == 2) {
-            make[2][2] = 45 - z;
-            s = make[0][0] + make[0][1] + make[0][2];
-            if  (make[1][0] + make[1][1] + make[1][2] == s &&
-                    make[2][0] + make[2][1] + make[2][2] == s &&
-                    make[0][0] + make[1][0] + make[2][0] == s &&
-                    make[0][1] + make[1][1] + make[2][1] == s &&
-                    make[0][2] + make[1][2] + make[2][2] == s &&
-                    make[0][0] + make[1][1] + make[2][2] == s &&
-                    make[2][0] + make[1][1] + make[0][2] == s)
-            {
-                count[0] = count[0] + 1;
-                for (i = 0;i <= 2;i ++)
-                {
-                	for (j = 0;j <= 2;j ++)
-                    {
-                        outl(make[i][j]);
-                        print(" ");
-                    }
-                    print("\n");
-                }
-               print("\n");
+void search(int c) {
+    if (c == N) {
+        printBoard();
+    }
+    else {
+        int r;
+        for (r = 0; r < N; r++) {
+            if (row[r] == 0 && d[0][r+c] == 0 && d[1][r+N-1-c] == 0) {
+                row[r] = d[0][r+c] = d[1][r+N-1-c] = 1;
+                col[c] = r;
+                search(c+1);
+                row[r] = d[0][r+c] = d[1][r+N-1-c] = 0;
             }
-       }
-       else {
-            if (y == 2) {
-                make[x][y] = 15 - make[x][0] - make[x][1];
-                if (make[x][y] > 0 && make[x][y] < 10 && color[make[x][y]] == 0) {
-                    color[make[x][y]] = 1;
-                    if (y == 2)
-                        search(x + 1, 0, z+make[x][y]);
-                    else
-                        search(x, y+1, z+make[x][y]);
-                    color[make[x][y]] = 0;
-            	}
-            }
-            else {
-                for (i = 1;i <= 9;i ++) {
-                    if (color[i] == 0) {
-                        color[i] = 1;
-                        make[x][y] = i;
-                        if (y == 2)
-                            search(x + 1, 0, z+i);
-                        else
-                            search(x, y+1, z+i);
-                        make[x][y] = 0;
-                        color[i] = 0;
-                    }
-                }
-            }
-    	}
+        }
     }
 }
-int main()
-{
-	origin(3);
-    search(0, 0, 0);
-    outlln(count[0]);
+
+int main() {
+    search(0);
     return 0;
 }

@@ -61,20 +61,19 @@ reg [31:0]              pc [63:0];
 reg [5:0]               next;
 reg [5:0]               head;
 reg [6:0]               size;
-wire full = size >= 60;
 
-assign rob_full = full;
-assign issue_value_valid1 = (opcode[issue_check1] < `LB || opcode[issue_check1] > `LHU) && (ready[issue_check1] || (alu_valid && alu_rob_index == issue_check1));
-assign issue_value_valid2 = (opcode[issue_check2] < `LB || opcode[issue_check2] > `LHU) && (ready[issue_check2] || (alu_valid && alu_rob_index == issue_check2));
-assign issue_value1 = issue_value_valid1 ? (ready[issue_check1] ? res[issue_check1] : alu_res) : 0;
-assign issue_value2 = issue_value_valid2 ? (ready[issue_check2] ? res[issue_check2] : alu_res) : 0;
+assign rob_full = size >= 60;
+assign issue_value_valid1 = ((opcode[issue_check1] < `LB || opcode[issue_check1] > `LHU) && (ready[issue_check1] || (alu_valid && alu_rob_index == issue_check1))) || (lsb_ls_enable && lsb_rob_index_out == issue_check1);
+assign issue_value_valid2 = ((opcode[issue_check2] < `LB || opcode[issue_check2] > `LHU) && (ready[issue_check2] || (alu_valid && alu_rob_index == issue_check2))) || (lsb_ls_enable && lsb_rob_index_out == issue_check2);
+assign issue_value1 = issue_value_valid1 ? ((lsb_ls_enable && lsb_rob_index_out == issue_check1) ? lsb_l_data : (ready[issue_check1] ? res[issue_check1] : alu_res)) : 0;
+assign issue_value2 = issue_value_valid2 ? ((lsb_ls_enable && lsb_rob_index_out == issue_check2) ? lsb_l_data : (ready[issue_check2] ? res[issue_check2] : alu_res)) : 0;
 
-integer i, cnt=0;
+integer i, cnt=0, cm_cnt=0;
 
-//integer debug_file;
-//initial begin
-//    debug_file = $fopen("rob_debug.txt");
-//end
+integer debug_file;
+initial begin
+    debug_file = $fopen("rob_debug1.txt");
+end
 
 always @(posedge clk) begin
     cnt = cnt + 1;
@@ -106,7 +105,7 @@ always @(posedge clk) begin
             if (!lsb_ls_enable && (!ready[head] || (opcode[head] >= `LB && opcode[head] <= `SW))) size <= size + 1;
         end
         if (alu_valid) begin
-            if (`DEBUG && cnt > `HEAD && cnt < `TAIL) $display("[alu %d] index: %d, val: %h, jump: %h", cnt, alu_rob_index, alu_res, alu_jump);
+            if (`DEBUG && cnt > `HEAD && cnt < `TAIL) $display("[alu  valid %d] index: %d, val: %h, jump: %h", cnt, alu_rob_index, alu_res, alu_jump);
             ready[alu_rob_index] <= 1;
             res[alu_rob_index] <= alu_res;
             real_jump[alu_rob_index] <= alu_jump;
@@ -115,6 +114,8 @@ always @(posedge clk) begin
         if (lsb_ls_enable) begin
 
             //$fdisplay(debug_file, "[rob commit] pc: %x, op: %d", pc[head], opcode[head]);
+            //cm_cnt = cm_cnt + 1;
+            //if (cm_cnt == 34938) $display("cnt: %d", cnt);
 
             head <= (head == 63) ? 0 : head + 1;
             if (!issue_valid) size <= size - 1;
@@ -131,6 +132,8 @@ always @(posedge clk) begin
             if (opcode[head] < `LB || opcode[head] > `SW) begin
 
                 //$fdisplay(debug_file, "[rob commit] pc: %x, op: %d", pc[head], opcode[head]);
+                //cm_cnt = cm_cnt + 1;
+                //if (cm_cnt == 34938) $display("cnt: %d", cnt);
 
                 if (`DEBUG && cnt > `HEAD && cnt < `TAIL) $display("[rob commit %d]: index [%d], opcode [%d], pc [%h], rd[%d], res[%h], res2[%h], size[%d]", cnt, head, opcode[head], pc[head], rd[head], res[head], jump_pc[head], size);
                 rf_valid <= 1'b1;

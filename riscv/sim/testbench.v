@@ -28,7 +28,7 @@ end
 initial begin
      // $dumpfile("test.vcd");
      // $dumpvars(0, testbench);
-     // #50000000 $finish; //3000000
+      #300000000 $finish; //3000000
 end
 
 endmodule
