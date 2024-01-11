@@ -39,6 +39,7 @@ module reorder_buffer(
 
     // for LSB
     input               lsb_ls_enable,
+    input               lsb_ls_out,
     input [5:0]         lsb_rob_index_out,
     input [31:0]        lsb_l_data,
     output reg          lsb_enable,
@@ -48,6 +49,7 @@ module reorder_buffer(
     output reg [31:0]   lsb_s_val,
 
     // for CDB
+    input               lsb_full,
     output              rob_full,
     output reg          flush,
     output reg          new_pc_enable,
@@ -69,7 +71,8 @@ reg [6:0]               size;
 
 wire [5:0] after_next = next == 63 ? 0 : next + 1;
 wire [5:0] after_head = head == 63 ? 0 : head + 1;
-wire head_is_ls = opcode[head] >= `LB && opcode[head] <= `SW;
+wire head_is_l = opcode[head] >= `LB && opcode[head] <= `LHU;
+wire head_is_s = opcode[head] >= `SB && opcode[head] <= `SW;
 wire lsb_is_l = opcode[lsb_rob_index_out] >= `LB && opcode[lsb_rob_index_out] <= `LHU;
 
 assign rob_full = size >= 60; // redundance
@@ -109,7 +112,7 @@ always @(posedge clk) begin
             pc[next] <= issue_pc;
             ready[next] <= 1'b0;
             next <= after_next;
-            if (!lsb_ls_enable && (!ready[head] || head_is_ls)) size <= size + 1;
+            if (!lsb_ls_enable && (!ready[head] || lsb_full || head_is_l)) size <= size + 1;
         end
         if (alu_valid) begin
             if (debug2) $display("[alu] [clk=%d] [index=%d] [val=%h] [jump=%h]", cnt, alu_rob_index, alu_res, alu_jump);
@@ -119,31 +122,36 @@ always @(posedge clk) begin
             jump_pc[alu_rob_index] <= alu_jump_pc;
         end
         if (lsb_ls_enable) begin
-            head <= (head == 63) ? 0 : head + 1;
+            head <= after_head;
             if (!issue_valid) size <= size - 1;
             if (debug1) $display("[rob] [clk=%d] [index=%d] [opcode=%d] [pc=%h] [rd=%d] [adr=%h] [res=%h] [size=%d] [val=%h]", cnt, lsb_rob_index_out, opcode[lsb_rob_index_out], pc[lsb_rob_index_out], rd[lsb_rob_index_out], res[lsb_rob_index_out], jump_pc[lsb_rob_index_out], size, lsb_l_data);
-            if (lsb_is_l) begin
-                rf_valid <= 1'b1;
-                rf_index <= lsb_rob_index_out;
-                rf_rd <= rd[lsb_rob_index_out];
-                rf_value <= lsb_l_data;
-            end
+            rf_valid <= 1'b1;
+            rf_index <= lsb_rob_index_out;
+            rf_rd <= rd[lsb_rob_index_out];
+            rf_value <= lsb_l_data;
             ready[head] <= 0;
         end
-        if (ready[head]) begin
+        if (ready[head] && !lsb_full) begin
             if (opcode[head] >= `BEQ && opcode[head] <= `BGEU) begin
                 total_br = total_br + 1;
                 pred_enable <= 1;
                 pred_pc <= pc[head];
                 pred_taken <= real_jump[head];
             end else pred_enable <= 0;
-            if (pc[head] == 32'h0010) $display("\nCongratulations! your clk cnt: %d, total_br: %d, wrong_br: %d", cnt, total_br, wrong_br);
-            if (~head_is_ls) begin
+            // if (pc[head] == 32'h0010) $display("\nCongratulations! your clk cnt: %d, total_br: %d, wrong_br: %d", cnt, total_br, wrong_br);
+            if (~head_is_l) begin
                 if (debug1) $display("[rob] [clk=%d] [index=%d] [opcode=%d] [pc=%h] [rd=%d] [res=%h] [jpc=%h] [size=%d]", cnt, head, opcode[head], pc[head], rd[head], res[head], jump_pc[head], size);                                
                 rf_valid <= 1'b1;
                 rf_index <= head;
                 rf_rd <= rd[head];
                 rf_value <= res[head];
+                if (head_is_s) begin
+                    lsb_enable <= 1;
+                    lsb_rob_index <= head;
+                    lsb_opcode <= opcode[head];
+                    lsb_ls_addr <= res[head];
+                    lsb_s_val <= jump_pc[head];
+                end else lsb_enable <= 0;
                 if (jump[head] != real_jump[head]) begin
                     flush <= 1'b1;
                     new_pc_enable <= 1'b1;
@@ -159,9 +167,8 @@ always @(posedge clk) begin
                 head <= after_head;
                 if (!issue_valid) size <= size - 1;
                 ready[head] <= 0;
-            end else begin
+            end else begin // load
                 ready[head] <= 0;
-                pred_enable <= 0;
                 lsb_enable <= 1;
                 lsb_rob_index <= head;
                 lsb_opcode <= opcode[head];
@@ -170,6 +177,7 @@ always @(posedge clk) begin
             end
         end else begin
             flush <= 1'b0;
+            pred_enable <= 0;
             if (~lsb_ls_enable) rf_valid <= 1'b0;
             new_pc_enable <= 1'b0;
             flush <= 1'b0;

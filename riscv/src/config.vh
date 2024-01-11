@@ -57,9 +57,9 @@
 
 // parameters for debugging
 `define    DEBUG            0
-`define    ISU              0
+`define    ISU              1
 `define    ROB              1
-`define    ALU              0
-`define    LSB              0
-`define    HEAD             0
-`define    TAIL             16200
+`define    ALU              1
+`define    LSB              1
+`define    HEAD             2110
+`define    TAIL             2123

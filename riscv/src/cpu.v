@@ -35,7 +35,7 @@ wire [31:0]         new_pc;
 wire                rob_full;
 wire                rs_full;
 wire                lsb_full;
-wire                full = rob_full || rs_full || lsb_full;
+wire                full = rob_full || rs_full;
 
 // MEM & ICache
 wire                icache_instr_out_enable;
@@ -149,6 +149,7 @@ wire [5:0]          lsb_rob_opcode;
 wire [31:0]         lsb_rob_ls_addr;
 wire [31:0]         lsb_rob_s_val;
 wire                lsb_rob_ls_valid;
+wire                lsb_rob_ls_out;
 wire [5:0]          lsb_rob_ls_index_out;
 wire [31:0]         lsb_rob_l_data;
 
@@ -316,6 +317,7 @@ reorder_buffer  reorder_buffer_inst (
     .alu_jump_pc(from_alu_real_jump_pc),
     .alu_rob_index(from_alu_rob_index_out),
     .lsb_ls_enable(lsb_rob_ls_valid),
+    .lsb_ls_out(lsb_rob_ls_out),
     .lsb_rob_index_out(lsb_rob_ls_index_out),
     .lsb_l_data(lsb_rob_l_data),
     .lsb_enable(lsb_rob_valid),
@@ -323,6 +325,7 @@ reorder_buffer  reorder_buffer_inst (
     .lsb_opcode(lsb_rob_opcode),
     .lsb_ls_addr(lsb_rob_ls_addr),
     .lsb_s_val(lsb_rob_s_val),
+    .lsb_full(lsb_full),
     .rob_full(rob_full),
     .flush(flush),
     .new_pc_enable(new_pc_enable),
@@ -400,6 +403,7 @@ register_file  register_file_inst (
     .rob_ls_addr(lsb_rob_ls_addr),
     .rob_s_val(lsb_rob_s_val),
     .rob_ls_valid(lsb_rob_ls_valid),
+    .rob_ls_out(lsb_rob_ls_out),
     .rob_ls_index_out(lsb_rob_ls_index_out),
     .rob_l_data(lsb_rob_l_data),
     .lsb_valid(rs_lsb_valid),
