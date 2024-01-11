@@ -126,6 +126,7 @@ always @(posedge clk) begin
             ready[head] <= 0;
         end
         if (ready[head]) begin
+            // if (pc[head] == 32'h0010) $display("\nCongratulations! your clk cnt: %d", cnt);
             if (~head_is_ls) begin
                 if (debug1) $display("[rob] [clk=%d] [index=%d] [opcode=%d] [pc=%h] [rd=%d] [res=%h] [jpc=%h] [size=%d]", cnt, head, opcode[head], pc[head], rd[head], res[head], jump_pc[head], size);                                
                 rf_valid <= 1'b1;
