@@ -19,6 +19,11 @@ module reorder_buffer(
     output [31:0]       issue_value1,
     output [31:0]       issue_value2,
 
+    // for predictor
+    output reg          pred_enable,
+    output reg [31:0]   pred_pc,
+    output reg          pred_taken,
+
     // for RF
     output reg          rf_valid,
     output reg [5:0]    rf_index,
@@ -73,7 +78,7 @@ assign issue_value_valid2 = ((opcode[issue_check2] < `LB || opcode[issue_check2]
 assign issue_value1 = issue_value_valid1 ? ((lsb_ls_enable && lsb_rob_index_out == issue_check1) ? lsb_l_data : (ready[issue_check1] ? res[issue_check1] : alu_res)) : 0;
 assign issue_value2 = issue_value_valid2 ? ((lsb_ls_enable && lsb_rob_index_out == issue_check2) ? lsb_l_data : (ready[issue_check2] ? res[issue_check2] : alu_res)) : 0;
 
-integer i, cnt=0;
+integer i, cnt=0, total_br=0, wrong_br=0;
 wire debug1 = `DEBUG && `ROB && cnt >= `HEAD && cnt <= `TAIL;
 wire debug2 = `DEBUG && `ALU && cnt >= `HEAD && cnt <= `TAIL;
 
@@ -126,7 +131,13 @@ always @(posedge clk) begin
             ready[head] <= 0;
         end
         if (ready[head]) begin
-            // if (pc[head] == 32'h0010) $display("\nCongratulations! your clk cnt: %d", cnt);
+            if (opcode[head] >= `BEQ && opcode[head] <= `BGEU) begin
+                total_br = total_br + 1;
+                pred_enable <= 1;
+                pred_pc <= pc[head];
+                pred_taken <= real_jump[head];
+            end else pred_enable <= 0;
+            if (pc[head] == 32'h0010) $display("\nCongratulations! your clk cnt: %d, total_br: %d, wrong_br: %d", cnt, total_br, wrong_br);
             if (~head_is_ls) begin
                 if (debug1) $display("[rob] [clk=%d] [index=%d] [opcode=%d] [pc=%h] [rd=%d] [res=%h] [jpc=%h] [size=%d]", cnt, head, opcode[head], pc[head], rd[head], res[head], jump_pc[head], size);                                
                 rf_valid <= 1'b1;
@@ -137,6 +148,7 @@ always @(posedge clk) begin
                     flush <= 1'b1;
                     new_pc_enable <= 1'b1;
                     new_pc <= real_jump[head] ? jump_pc[head] : res[head];
+                    wrong_br = wrong_br + 1;
                 end else begin
                     flush <= 1'b0;
                     if (opcode[head] == `JALR) begin
@@ -149,6 +161,7 @@ always @(posedge clk) begin
                 ready[head] <= 0;
             end else begin
                 ready[head] <= 0;
+                pred_enable <= 0;
                 lsb_enable <= 1;
                 lsb_rob_index <= head;
                 lsb_opcode <= opcode[head];

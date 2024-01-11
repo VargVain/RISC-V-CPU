@@ -58,6 +58,11 @@ wire [31:0]         iu_instr_out_pc;
 wire                pred_jump;
 wire [31:0]         pred_instr_predict_addr;
 
+// predictor & ROB
+wire                pred_rob_valid;
+wire [31:0]         pred_rob_pc;
+wire                pred_rob_taken;
+
 // IU & decoder
 wire [5:0]          dec_opcode;
 wire [4:0]          dec_rs1;
@@ -261,7 +266,10 @@ predictor  predictor_inst (
     .rst(rst_in),
     .rdy(rdy_in),
     .instr_predict_addr(pred_instr_predict_addr),
-    .jump(pred_jump)
+    .jump(pred_jump),
+    .rob_pred_valid(pred_rob_valid),
+    .rob_pred_pc(pred_rob_pc),
+    .rob_pred_taken(pred_rob_taken)
 );
 
 arithmetic_logic_unit  arithmetic_logic_unit_inst (
@@ -295,6 +303,9 @@ reorder_buffer  reorder_buffer_inst (
     .issue_value_valid2(rob_value_valid2),
     .issue_value1(rob_value1),
     .issue_value2(rob_value2),
+    .pred_enable(pred_rob_valid),
+    .pred_pc(pred_rob_pc),
+    .pred_taken(pred_rob_taken),
     .rf_valid(rf_rob_valid),
     .rf_index(rf_rob_index),
     .rf_rd(rf_rob_rd),
