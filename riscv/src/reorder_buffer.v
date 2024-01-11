@@ -76,8 +76,8 @@ initial begin
 end
 
 always @(posedge clk) begin
-    cnt = cnt + 1;
-    if (cnt % 10000 == 0) $display("checkpoint cnt=%d", cnt);
+    //cnt = cnt + 1;
+    //if (cnt % 10000 == 0) $display("checkpoint cnt=%d", cnt);
     if (rst || flush) begin
         // reset
         flush <= 0;
