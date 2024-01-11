@@ -37,21 +37,18 @@ assign instr_predict_addr = pc;
 
 always @(posedge clk) begin
     if (rst) begin
-        // reset
         stall <= 0;
         instr_out_valid <= 0;
         instr_in_addr <= 0;
         pc <= 0;
     end else if (rdy) begin
         if (flush) begin
-            // flush
             stall <= 0;
             instr_out_valid <= 0;
             pc <= new_pc;
             instr_in_addr <= new_pc;
         end else begin
             if (instr_in_valid && ~full && ~stall) begin
-                //$display("pc %h, inst %h", pc, instr_in);
                 instr_out_valid <= 1'b1;
                 instr_out <= instr_in;
                 instr_out_pc <= pc;

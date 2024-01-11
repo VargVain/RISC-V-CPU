@@ -82,11 +82,11 @@ wire [31:0] val1 = rs1 == 0 ? 0 : rf_has_dep1 ? (rob_value_valid1 ? rob_value1 :
 wire [31:0] val2 = rs2 == 0 ? 0 : rf_has_dep2 ? (rob_value_valid2 ? rob_value2 : 0) : rf_val2;
 
 integer cnt=0;
+wire debug = `DEBUG && `ISU && cnt >= `HEAD && cnt <= `TAIL;
 
 always @(posedge clk) begin
     cnt = cnt + 1;
 if (rst) begin
-        // reset
         rs_valid <= 0;
         rf_valid <= 0;
         rob_valid <= 0;
@@ -95,7 +95,6 @@ if (rst) begin
         last_regrename <= 0;
     end else if (rdy) begin
         if (flush) begin
-            // flush
             rs_valid <= 0;
             rf_valid <= 0;
             rob_valid <= 0;
@@ -104,7 +103,7 @@ if (rst) begin
             last_regrename <= 0;
         end else begin
             if (instr_in_valid) begin
-                if (`DEBUG && cnt > `HEAD && cnt < `TAIL) $display("[issue %d]: rob_index=%d pc=%h opcode=%d rd=%d {rs1=%d dep1=%d has_dep1=%d val1=%h} {rs2=%d dep2=%d has_dep2=%d val2=%h} imm=%h", cnt, rob_next_index, pc, opcode, rd, rs1, dep1, has_dep1, val1, rs2, dep2, has_dep2, val2, imm);
+                if (debug) $display("[isu] [clk=%d] [index=%d] [opcode=%d] [pc=%h] [rd=%d] {rs1=%d dep1=%d has_dep1=%d val1=%h} {rs2=%d dep2=%d has_dep2=%d val2=%h} imm=%h", cnt, rob_next_index, opcode, pc, rd, rs1, dep1, has_dep1, val1, rs2, dep2, has_dep2, val2, imm);
                 rob_valid <= 1'b1;
                 rob_rd <= rd;
                 rob_jumped <= jumped;

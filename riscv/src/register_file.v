@@ -45,7 +45,6 @@ integer i, cnt=0;
 always @(posedge clk) begin
     cnt = cnt + 1;
     if (rst) begin
-        // reset
         for (i = 0; i < 32; i = i + 1) begin
             register[i] <= 0;
             reg_dep[i] <= 0;
@@ -53,22 +52,18 @@ always @(posedge clk) begin
         end
     end else if (rdy) begin
         if (flush) begin
-            // flush
             for (i = 0; i < 32; i = i + 1) begin
                 reg_dep[i] <= 0;
                 reg_has_dep[i] <= 0;
             end
         end else begin
-            //if (cnt < 500) $display("%d, %d, %d", cnt, rob_valid, rob_index);
             if (rob_valid && rob_rd != 0) begin
-                //$display("[rf robcommit %d] rd[%d] rob_index[%d], old[%d]", cnt, rob_rd, rob_index, reg_dep[rob_rd]);
                 register[rob_rd] <= rob_value;
                 if (reg_dep[rob_rd] == rob_index) begin
                     if (~issue_valid || issue_regname != rob_rd) reg_has_dep[rob_rd] <= 1'b0;
                 end
             end
             if (issue_valid && issue_regname != 0) begin
-                //$display("[rf rename] from %d to %d", issue_regname, issue_regrename);
                 reg_dep[issue_regname] <= issue_regrename;
                 reg_has_dep[issue_regname] <= 1'b1;
             end

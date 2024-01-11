@@ -34,7 +34,6 @@ integer i;
 
 always @(posedge clk) begin
     if (rst) begin
-        // reset
         loading <= 0;
         loading_addr <= 0;
         for (i = 0; i < 256; i = i + 1) begin

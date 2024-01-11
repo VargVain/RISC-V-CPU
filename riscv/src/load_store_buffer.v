@@ -42,14 +42,12 @@ module load_store_buffer (
 
     always @(posedge clk) begin
         if (rst) begin
-            // reset
             lsb_valid <= 0;
             state <= 0;
             mem_valid <= 0;
             rob_ls_valid <= 0;
         end else if (rdy) begin
             if (flush) begin
-                // flush
                 lsb_valid <= 0;
                 state <= 0;
                 mem_valid <= 0;

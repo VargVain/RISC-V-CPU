@@ -56,6 +56,10 @@
 `define    ROB_SIZE         64
 
 // parameters for debugging
-`define    DEBUG            0
+`define    DEBUG            1
+`define    ISU              0
+`define    ROB              1
+`define    ALU              0
+`define    LSB              0
 `define    HEAD             0
 `define    TAIL             16200
