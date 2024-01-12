@@ -96,22 +96,25 @@ always @(posedge clk) begin
             end
         end
         2: begin // STORE
-            if (progress == size - 1) begin
-                progress <= 3'b000;
-                state <= 3'd4;
-                lsb_valid <= 1'b1;
-                mem_wr <= 1'b0;
-                mem_a <= 32'b0;
-            end
-            else begin 
-                case (progress)
-                    3'b000: mem_dout <= lsb_s_data[15:8];
-                    3'b001: mem_dout <= lsb_s_data[23:16];
-                    3'b010: mem_dout <= lsb_s_data[31:24];
-                    default;
-                endcase
-                progress <= progress + 1;
-                mem_a <= mem_a + 1;
+            if (io_buffer_full) begin // stall when io buffer is full
+            end else begin
+                if (progress == size - 1) begin
+                    progress <= 3'b000;
+                    state <= 3'd4;
+                    lsb_valid <= 1'b1;
+                    mem_wr <= 1'b0;
+                    mem_a <= 32'b0;
+                end
+                else begin 
+                    case (progress)
+                        3'b000: mem_dout <= lsb_s_data[15:8];
+                        3'b001: mem_dout <= lsb_s_data[23:16];
+                        3'b010: mem_dout <= lsb_s_data[31:24];
+                        default;
+                    endcase
+                    progress <= progress + 1;
+                    mem_a <= mem_a + 1;
+                end
             end
         end
         3: begin // LOAD

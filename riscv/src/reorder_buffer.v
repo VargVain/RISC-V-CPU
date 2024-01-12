@@ -81,7 +81,7 @@ assign issue_value_valid2 = ((opcode[issue_check2] < `LB || opcode[issue_check2]
 assign issue_value1 = issue_value_valid1 ? ((lsb_ls_enable && lsb_rob_index_out == issue_check1) ? lsb_l_data : (ready[issue_check1] ? res[issue_check1] : alu_res)) : 0;
 assign issue_value2 = issue_value_valid2 ? ((lsb_ls_enable && lsb_rob_index_out == issue_check2) ? lsb_l_data : (ready[issue_check2] ? res[issue_check2] : alu_res)) : 0;
 
-integer i, cnt=0, total_br=0, wrong_br=0;
+integer i, cnt=0, total_br=0, wrong_br=0, cmt=0;
 wire debug1 = `DEBUG && `ROB && cnt >= `HEAD && cnt <= `TAIL;
 wire debug2 = `DEBUG && `ALU && cnt >= `HEAD && cnt <= `TAIL;
 
@@ -122,6 +122,7 @@ always @(posedge clk) begin
             jump_pc[alu_rob_index] <= alu_jump_pc;
         end
         if (lsb_ls_enable) begin
+            cmt = cmt + 1;
             head <= after_head;
             if (!issue_valid) size <= size - 1;
             if (debug1) $display("[rob] [clk=%d] [index=%d] [opcode=%d] [pc=%h] [rd=%d] [adr=%h] [res=%h] [size=%d] [val=%h]", cnt, lsb_rob_index_out, opcode[lsb_rob_index_out], pc[lsb_rob_index_out], rd[lsb_rob_index_out], res[lsb_rob_index_out], jump_pc[lsb_rob_index_out], size, lsb_l_data);
@@ -138,8 +139,9 @@ always @(posedge clk) begin
                 pred_pc <= pc[head];
                 pred_taken <= real_jump[head];
             end else pred_enable <= 0;
-            // if (pc[head] == 32'h0010) $display("\nCongratulations! your clk cnt: %d, total_br: %d, wrong_br: %d", cnt, total_br, wrong_br);
+            // if (pc[head] == 32'h0010) $display("\nCongratulations! your clk cnt: %d, cmt: %d, total_br: %d, wrong_br: %d", cnt, cmt, total_br, wrong_br);
             if (~head_is_l) begin
+                cmt = cmt + 1;
                 if (debug1) $display("[rob] [clk=%d] [index=%d] [opcode=%d] [pc=%h] [rd=%d] [res=%h] [jpc=%h] [size=%d]", cnt, head, opcode[head], pc[head], rd[head], res[head], jump_pc[head], size);                                
                 rf_valid <= 1'b1;
                 rf_index <= head;

@@ -77,7 +77,7 @@ module load_store_buffer (
             if (debug) begin
                 $display("[lsb] [clk=%d] [head=%d] [next=%d] [size=%d] [state=%d]", cnt, head, next, size, state);
                 for (i = 0; i < 32; i = i + 1) begin
-                    $display("%d--------busy:%d index:%d addr:%d opcode:%d", i, busy[i], index[i], addr[i], opcode[i]);
+                    //$display("%d--------busy:%d index:%d addr:%d opcode:%d", i, busy[i], index[i], addr[i], opcode[i]);
                 end
             end
 
