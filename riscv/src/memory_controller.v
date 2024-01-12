@@ -62,10 +62,13 @@ always @(posedge clk) begin
                     mem_a <= lsb_ls_addr;
                 end
                 else begin
-                    state <= 3'd2;
-                    mem_wr <= 1'b1;
-                    mem_dout <= lsb_s_data[7:0];
-                    mem_a <= lsb_ls_addr;
+                    if (io_buffer_full) begin
+                    end else begin
+                        state <= 3'd2;
+                        mem_wr <= 1'b1;
+                        mem_dout <= lsb_s_data[7:0];
+                        mem_a <= lsb_ls_addr;
+                    end
                 end
             end
             else if (instr_out_enable) begin
